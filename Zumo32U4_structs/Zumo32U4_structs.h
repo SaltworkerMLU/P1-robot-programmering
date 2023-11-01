@@ -10,8 +10,8 @@ Zumo32U4ProximitySensors proximitySensors;
 Zumo32U4LineSensors lineSensors;
 Zumo32U4IMU IMU;
 Zumo32U4Motors motors;
-Zumo32U4OLED oled;
-Zumo32U4LCD lcd;
+Zumo32U4OLED OLED;
+Zumo32U4LCD LCD;
 
 struct buttons {
   char release = "O";
@@ -45,7 +45,7 @@ struct encoders {
 struct proximity {
   uint8_t sensorValue[6]; // Raw proximity sensor values. Assumes all 3 proximity sensors are in use
 
-  getProximitySensorValue() { // Extracts proximity sensor values, and then update proximitySensorValue[]
+  void getSensorValue() { // Extracts proximity sensor values, and then update proximitySensorValue[]
     proximitySensors.read(); 
     sensorValue[0] = proximitySensors.countsLeftWithLeftLeds();
     sensorValue[1] = proximitySensors.countsLeftWithRightLeds();
@@ -61,9 +61,7 @@ struct proximity {
 struct line {
   uint16_t sensorValue[5]; // Raw line sensor values. Assumes all 5 line sensors are in use.
 
-  getLineSensorValue() { 
-    lineSensors.read(sensorValue, QTR_EMITTERS_ON); 
-  }
+  void getSensorValue() { lineSensors.read(sensorValue, QTR_EMITTERS_ON); }
 };
 
 struct imu {
@@ -96,7 +94,7 @@ struct imu {
     offset = total / iterations; // The average of all reading under calibration
   }
 
-  void gyroAngle(int index) {
+  void gyroAngle() {
     IMU.readGyro(); // Only gyrometer is needed for Zumo32U4 angle readings
     int16_t turnRate = IMU.g.z - offset;
     uint16_t m = micros(); // "New time"
@@ -108,22 +106,22 @@ struct imu {
   }
 };
 
-struct OLED {
+struct oled {
   int8_t displayLine=0;
 
-  displayPrint(String input) {
-    oled.print(input);
+  void displayPrint(String input) {
+    OLED.print(input);
     displayLine++;
-    oled.gotoXY(0, displayLine);
+    OLED.gotoXY(0, displayLine);
   }
 };
 
-struct LCD {
+struct lcd {
   int8_t displayLine=0;
 
-  displayPrint(String input) {
-    lcd.print(input);
+  void displayPrint(String input) {
+    LCD.print(input);
     displayLine++;
-    lcd.gotoXY(0, displayLine);
+    LCD.gotoXY(0, displayLine);
   }
 };
