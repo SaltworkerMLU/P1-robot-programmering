@@ -20,8 +20,6 @@ void forward(){
 }
 void turnLeft(){
   int spd = speed;
-/*  motors.setSpeeds(-spd,-spd);
-  delay(20);*/
   motors.setSpeeds(-spd,spd);
   delay(20);
   motors.setSpeeds((-0.75*spd),spd);
@@ -29,9 +27,8 @@ void turnLeft(){
 }
 void turnRight(){
   int spd = speed;
-/*  motors.setSpeeds(-spd,-spd);
-  delay(20);*/
   motors.setSpeeds(spd,-spd);
+  delay(20);
   motors.setSpeeds(spd,(-0.75*spd));
   delay(75);
 }
