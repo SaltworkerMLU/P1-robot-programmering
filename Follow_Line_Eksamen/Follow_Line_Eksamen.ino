@@ -15,6 +15,7 @@ void forward(int spd){
   motors.setSpeeds(spd,spd);
 }
 void turn(int spd){
+  //first turns on the spot and then moves slightly forward while turning
   motors.setSpeeds(spd,-spd);
   delay(20);
   motors.setSpeeds(spd,(-0.75*spd));
