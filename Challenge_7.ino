@@ -7,7 +7,7 @@ Zumo32U4OLED display;
 Zumo32U4Encoders encoders;
 Zumo32U4IMU imu;
 
-#define NUM_SENSORS 5
+#define NUM_SENSORS 3
 uint16_t lineSensorValues[NUM_SENSORS];
 int threshold = 800;
 int alignStage = 0;
@@ -33,10 +33,10 @@ void loop() {
     case 0:
       readLineSensors();
       forward();
-      if (lineSensorValues[0] > threshold || lineSensorValues[4] > threshold){
+      if (lineSensorValues[0] > threshold || lineSensorValues[2] > threshold){
         if (lineSensorValues[0] > threshold)
           sideStage = 0;
-        if (lineSensorValues[4] > threshold){
+        if (lineSensorValues[2] > threshold){
           sideStage = 1;
         }
         alignStage++;
@@ -46,7 +46,7 @@ void loop() {
       switch (sideStage){
         case 0:
           resetEncoders();
-          while (lineSensorValues[4] < threshold){
+          while (lineSensorValues[2] < threshold){
             readLineSensors();
             forward();
           }
@@ -77,7 +77,7 @@ void loop() {
       delay(500);
       readLineSensors();
       motors.setSpeeds(100+gyroAdjust(),100-gyroAdjust());
-      if (lineSensorValues[0] > threshold || lineSensorValues[2] > threshold|| lineSensorValues[4] > threshold){
+      if (lineSensorValues[0] > threshold || lineSensorValues[1] > threshold|| lineSensorValues[2] > threshold){
         stop();
       }
   } 
