@@ -7,7 +7,7 @@ Zumo32U4OLED display;
 Zumo32U4Encoders encoders;
 Zumo32U4IMU imu;
 
-#define NUM_SENSORS 3
+#define NUM_SENSORS 5
 uint16_t lineSensorValues[NUM_SENSORS];
 int threshold = 800;
 int alignStage = 0;
@@ -33,10 +33,10 @@ void loop() {
     case 0:
       readLineSensors();
       forward();
-      if (lineSensorValues[0] > threshold || lineSensorValues[2] > threshold){
+      if (lineSensorValues[0] > threshold || lineSensorValues[4] > threshold){
         if (lineSensorValues[0] > threshold)
           sideStage = 0;
-        if (lineSensorValues[2] > threshold){
+        if (lineSensorValues[4] > threshold){
           sideStage = 1;
         }
         alignStage++;
@@ -46,7 +46,7 @@ void loop() {
       switch (sideStage){
         case 0:
           resetEncoders();
-          while (lineSensorValues[2] < threshold){
+          while (lineSensorValues[4] < threshold){
             readLineSensors();
             forward();
           }
@@ -68,17 +68,23 @@ void loop() {
           }
           alignStage++;
           break;
-      }    
+      }
+
+      //Alt før dette er align
     case 2:
       stop();
       turnSensorReset();
-      resetEncoders();
       forward();
-      delay(500);
+      delay(100);   
+      alignStage++; 
+    case 3:
       readLineSensors();
-      motors.setSpeeds(100+gyroAdjust(),100-gyroAdjust());
-      if (lineSensorValues[0] > threshold || lineSensorValues[1] > threshold|| lineSensorValues[2] > threshold){
+      if (lineSensorValues[0] > threshold || lineSensorValues[2] > threshold || lineSensorValues[4] > threshold){
         stop();
+      }
+      else{
+        print(getTurnAngleInDegrees());
+        motors.setSpeeds(200+gyroAdjust(),200-gyroAdjust());
       }
   } 
 }
@@ -97,6 +103,12 @@ void stop(){
 
 void readLineSensors(){
   lineSensors.read(lineSensorValues, QTR_EMITTERS_ON);
+  print(lineSensorValues[2]);
+}
+
+void print(String something){
+  display.clear();
+  display.print(something);
 }
 
 void resetEncoders(){
