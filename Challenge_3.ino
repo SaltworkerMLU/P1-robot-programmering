@@ -30,7 +30,7 @@ void loop() {
   readSensors();
   while (lineSensorValues[0]<threshold && lineSensorValues[1]<threshold && lineSensorValues[2]<threshold){ 
     readSensors();
-    motors.setSpeeds(150-24*getError()-17*getErrorFront(),150+24*getError()+17*getErrorFront());
+    motors.setSpeeds(150-30*getError()-15*getErrorFront(),150+30*getError()+15*getErrorFront());
     delay(5);
   }
   motors.setSpeeds(0,0);
@@ -42,7 +42,7 @@ void readSensors(){
 }
 
 float getError(){
-  return proxSensors.countsRightWithRightLeds()-(proxSensors.countsLeftWithLeftLeds()-0.2);
+  return proxSensors.countsRightWithRightLeds()-(proxSensors.countsLeftWithLeftLeds());
 }
 
 float getErrorFront(){
