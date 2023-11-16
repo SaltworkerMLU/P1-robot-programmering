@@ -6,47 +6,12 @@ Zumo32U4ButtonA BUTTONA;
 Zumo32U4ButtonB BUTTONB;
 Zumo32U4ButtonC BUTTONC;
 Zumo32U4Buzzer BUZZER;
-Zumo32U4LCD SCREEN;
+Zumo32U4OLED SCREEN;
 Zumo32U4Encoders ENCODERS;
 Zumo32U4IMU IMU;
 Zumo32U4LineSensors LINESENSORS;
 Zumo32U4Motors MOTORS;
 Zumo32U4ProximitySensors PROXSENSORS;
-
-/*! This struct makes use of the provided display. */
-struct screen {
-  uint8_t line = 0;
-
-  /*! Prints {input} at displayLine. */
-  void show(String input) {
-  {
-    SCREEN.gotoXY(0, line);
-    SCREEN.print(input);
-  }
-}
-
-  /*! Clears display and sets displayLine to be {firstLine}. */
-  void reRender() { 
-    SCREEN.clear();
-    line = 0; 
-  }
-} screen;
-
-struct buzzer {
-  void intermission(uint8_t attention=10, int windup=800) {
-    ledRed(1);    // Turn on red LED
-    BUZZER.playFrequency(400, windup/2, attention); // 400Hz sound, ms/2, 15=max volume & 0 = min volume
-    delay(windup/2);                                // Prevent the prior function from being overwritten
-    ledYellow(1); // Turn on yellow LED
-    BUZZER.playFrequency(800, windup/2, attention); // 800Hz sound
-    delay(windup/2);                                // Prevent the prior function from being overwritten
-    ledRed(0);    // Turn off red LED
-    ledYellow(0); // Turn off yellow LED
-    ledGreen(1);  // Turn on green LED. No need to turn it off. Green LED lights up when Serial monitor active
-    BUZZER.playFrequency(1200, windup, attention);  // 1200Hz lyd
-    delayMicroseconds(1); // After 1us, execute next line in the program. Without the delay, the buzzer will play forever.
-  }
-} buzzer;
 
 /*! This struct makes use of all 3 buttons. */
 struct buttons {
@@ -56,11 +21,12 @@ struct buttons {
 
   /*! While neither button A, B, nor C has been pressed: Do nothing. */
   void pressAnyKeyToContinue() { 
-    screen.show("A=+; B=-");
-    screen.line = 1;
-    screen.show("C=onfirm");
+    SCREEN.clear();
+    SCREEN.print("A=+; B=-");
+    SCREEN.gotoXY(0, 1);
+    SCREEN.print("C=onfirm");
     while (!BUTTONA.isPressed() && !BUTTONB.isPressed() && !BUTTONC.isPressed()) {} 
-    screen.reRender();
+    SCREEN.clear();
   }
 
   /*! Function to acquire variable protocol. Update protocol by pressing and releasing:
@@ -70,14 +36,15 @@ struct buttons {
    *  Whilst function is running, keep protocol in range 1-7 and show variable protocol on display. */
   void getProtocol() {
     while (!BUTTONC.getSingleDebouncedRelease()) {
-      screen.show((String)protocol);
+      SCREEN.print((String)protocol);
+      SCREEN.gotoXY(0, 0);
       if (BUTTONA.getSingleDebouncedRelease()) { protocol++; }
       if (BUTTONB.getSingleDebouncedRelease()) { protocol--; }
       if (protocol % 8 == 0) { protocol = -(protocol/8)*6 + 7; } // if (protocol == 0) { protocol = 7; } else if (protocol == 8) { protocol = 1; }
     }
-    screen.reRender();
+    SCREEN.clear();
   }
-} buttons;
+};
 
 struct lineSensors {
   /*! Line sensor values are stored here after lineSensors.read() has been called. */
@@ -92,7 +59,7 @@ struct lineSensors {
   /*! Reads line follower sensors and updates value[3]. */
   void read() { LINESENSORS.read(value, QTR_EMITTERS_ON); }
 
-} lineSensors;
+};
 
 struct proxSensors {
   /*! Proximity sensor values are stored here after proxSensors.read() has been called. */
@@ -138,7 +105,7 @@ struct proxSensors {
 
   /*! Returns error of front sensors. */
   float getErrorFront() { return value[3]-value[2]; }
-} proxSensors;
+};
 
 /*! This struct represents the Zumo32U4 IMU */
 struct imu {
@@ -163,7 +130,7 @@ struct imu {
   /*! Takes measurements of gyrometer z-axis {iterations} amount of times. Then updates several struct variables */
   void calibrateTurn(int iterations=1000) {
     initMAG();
-    screen.show("Gyro cal");
+    SCREEN.print("Gyro cal");
     delay(500);
     int32_t total = 0;
     for (int i = 0; i < iterations; i++) {
@@ -175,7 +142,7 @@ struct imu {
     turnAngle = 0; // Resets angle
     zumoAngle = 0; // Resets Zumo32U4 angle (the important one)
     offset = total / iterations; // The average of all reading under calibration
-    screen.reRender();
+    SCREEN.clear();
   }
 
   /*! Used to update zumoAngle. 
@@ -201,7 +168,7 @@ struct imu {
     dAngle();
     return (180-zumoAngle)/9; 
   }
-} imu;
+};
 
 struct motors {
   void forward(int speed=100) { MOTORS.setSpeeds(speed, speed); }
@@ -215,7 +182,7 @@ struct motors {
     MOTORS.setSpeeds(spd,(-0.75*spd));
     delay(75);
   }
-} motors;
+};
 
 struct encoders {
   int16_t value[2];
@@ -240,79 +207,4 @@ struct encoders {
 
     return (distanceL + distanceR)/2;
   }
-} encoders;
-
-void align() {
-  int threshold = 600;
-  int speed = 100;
-  int caseStep = 0;
-  bool leftReachedTape = false, leftOverTape = false;
-  bool rightReachedTape = false, rightOverTape = false;
-  lineSensors.read();
-
-  if (lineSensors.value[0] < threshold && lineSensors.value[4] < threshold) { caseStep = 0;} 
-  else if (lineSensors.value[0] >= threshold) {
-    caseStep = 2;
-    leftReachedTape = true;
-  } 
-  else if (lineSensors.value[4] >= threshold) {
-    caseStep = 2;
-    rightReachedTape = true;
-  }
-
-  switch (caseStep){
-    case 0: 
-      motors.forward(speed);
-      break;
-    case 1: 
-      motors.stop();
-      break;
-    case 2: 
-      motors.stop();
-      delay(500);
-      motors.forward(speed/2);
-
-      bool run = true;
-
-      while(run){
-        lineSensors.read();
-        if(leftReachedTape && lineSensors.value[4] >= threshold){
-          motors.stop();
-          rightReachedTape = true;
-          run = false;
-        } 
-        else if (rightReachedTape && lineSensors.value[0] >= threshold){
-          motors.stop();
-          leftReachedTape = true;
-          run = false;
-        }
-      }
-
-      delay(1000);
-
-      run = true;
-
-      motors.forward(speed);
-
-      while (run){
-        lineSensors.read();
-
-        //  Checks left sid
-        if (leftReachedTape && lineSensors.value[0] < threshold){      //  Goes back if over tape.
-          MOTORS.setLeftSpeed(-speed);
-          leftOverTape = true;
-        } 
-        else if(leftOverTape && lineSensors.value[0] >= threshold){ MOTORS.setLeftSpeed(0); } //  Only stops if it have been over the tape once.
-
-        //  Checks right side
-        if (rightReachedTape && lineSensors.value[2] < threshold){     //  Goes back if over tape.
-          MOTORS.setRightSpeed(-speed);
-          rightOverTape = true;
-        } 
-        else if (rightOverTape && lineSensors.value[2] >= threshold){ MOTORS.setRightSpeed(0); }  //  Only stops if it have been over the tape once.
-      }
-      break;
-  }
-
-  delay(100);
-}
+};
