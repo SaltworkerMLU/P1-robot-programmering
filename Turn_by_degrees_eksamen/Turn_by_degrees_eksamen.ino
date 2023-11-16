@@ -137,24 +137,6 @@ void turnSensorUpdate()//turnSensors
   imu.readGyro();
   turnRate = imu.g.z - gyroOffset;
 
-  // Figure out how much time has passed since the last update (dt)
-  uint16_t m = micros();
-  uint16_t dt = m - gyroLastUpdate;
-  gyroLastUpdate = m;
-
-  // Multiply dt by turnRate in order to get an estimation of how
-  // much the robot has turned since the last update.
-  // (angular change = angular velocity * time)
-  int32_t d = (int32_t)turnRate * dt;
-
-  // The units of d are gyro digits times microseconds.  We need
-  // to convert those to the units of turnAngle, where 2^29 units
-  // represents 45 degrees.  The conversion from gyro digits to
-  // degrees per second (dps) is determined by the sensitivity of
-  // the gyro: 0.07 degrees per second per digit.
-  //
-  // (0.07 dps/digit) * (1/1000000 s/us) * (2^29/45 unit/degree)
-  // = 14680064/17578125 unit/(digit*us)
   turnAngle += (int64_t)d * 14680064 / 17578125;
 }
 void forward(int spd){//movement
@@ -177,7 +159,6 @@ else if (lineSensorValues[2] >= threshold && !rightReachedTape){        //  Alig
   stop();
   checkOver();
 }
-
 }
 void checkOver(){
   delay(500);
@@ -237,8 +218,8 @@ void checkOver(){
 void turnByDegree(int degree){
 turnSensorReset();
 float angle = getTurnAngleInDegrees();
-if (parameter<0){
-  while (parameter<angle){
+if (degree<0){
+  while (degree<angle){
     turn(speed);
     angle = getTurnAngleInDegrees();
   }
