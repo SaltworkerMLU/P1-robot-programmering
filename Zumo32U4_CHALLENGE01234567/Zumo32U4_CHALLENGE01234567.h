@@ -16,6 +16,70 @@ struct challenge {
     buzzer.intermission();
   }
 
+  void alignZumo(String side){
+    int threshold = 600;
+    int speed = 100;
+    bool run = true;
+    bool leftReachedTape = false, leftOverTape = false, leftDone = false;
+    bool rightReachedTape = false, rightOverTape = false, rightDone = false;
+
+    delay(500);
+    motors.forward(speed/2);
+
+    while(run){
+      lineSensors.read();
+      if(side == "left" && lineSensors.value[2] >= threshold){
+        leftReachedTape = true;
+        rightReachedTape = true;
+        motors.stop();
+        run = false;
+      }
+      else if (side == "right" && lineSensors.value[0] >= threshold){
+        leftReachedTape = true;
+        rightReachedTape = true;
+        motors.stop();
+        run = false;
+      }
+    }
+
+    delay(1000);
+    run = true;
+    motors.forward(speed);
+
+    while (run){
+      lineSensors.read();
+
+      if (!leftDone || !rightDone){   //  Runs if and only if one of the sides is not aligned.
+        //  Checks left side
+        if (leftReachedTape && lineSensors.value[0] < threshold){      //  Goes back if over tape.
+          MOTORS.setLeftSpeed(-speed);
+          leftOverTape = true;
+          leftDone = false;
+        } 
+        else if(leftOverTape && lineSensors.value[0] >= threshold){  //  Only stops if it have been over the tape once.
+          MOTORS.setLeftSpeed(0);
+          leftDone = true;
+        }
+
+        //  Checks right side
+        if (rightReachedTape && lineSensors.value[2] < threshold){     //  Goes back if over tape.
+          MOTORS.setRightSpeed(-speed);
+          rightOverTape = true;
+          rightDone = false;
+        }
+        else if (rightOverTape && lineSensors.value[2] >= threshold){  //  Only stops if it have been over the tape once.
+          MOTORS.setRightSpeed(0);
+          rightDone = true;
+        }
+      }
+      else {
+        run = false;
+      }    //  Stops aligning the Zumo when both sides have stopped.
+    }
+
+
+  }
+
   /*! CHALLENGE ONE.
    *  The Zumo shall be able to.
    *  1. Drive to the white line.
@@ -25,100 +89,35 @@ struct challenge {
    *     ...to the back wall at the end of the hallway. */
   void one() {
     int threshold = 600;
-    int caseStep = 0;
     int speed = 100;
     int movementParameter = 11;
     int maxDistance = 41;
-    bool run;
-    bool leftReachedTape = false, leftOverTape = false, leftDone = false;
-    bool rightReachedTape = false, rightOverTape = false, rightDone = false;
+    String side = "";
+    bool tapeReached = false;
+
     lineSensors.read();
 
-    if (lineSensors.value[0] < threshold && lineSensors.value[2] < threshold) { caseStep = 0; }  //  Goes forward when the zumo have not reached the tape.
-    else if (lineSensors.value[0] >= threshold && !leftReachedTape){  //  Aligns from the left side.
-    caseStep = 1;
-    leftReachedTape = true;
-    } 
-    else if (lineSensors.value[2] >= threshold && !rightReachedTape){ //  Aligns from the right side
-      caseStep = 1;
-      rightReachedTape = true;
-    } 
-    else { caseStep = 2; } //  Goes forward when the Zumo is aligned.
+    if (lineSensors.value[0] < threshold && lineSensors.value[2] < threshold) {
+      motors.forward(speed);
+    }
+    else if (lineSensors.value[0] >= threshold && !tapeReached){
+      motors.stop();
+      tapeReached = true;
+      side = "left";
+    }
+    else if (lineSensors.value[2] >= threshold && !tapeReached){
+      motors.stop();
+      tapeReached = true;
+      side = "right";
+    }
+    else if (tapeReached){
+      alignZumo(side);
+      while (1){
+        
+      }
+    }
 
-  switch (caseStep){    //    Either the zumo goes forward or
-    case 0: motors.forward();
-            break;
-    case 1: motors.stop();
-            delay(500);
-            motors.forward(speed/2);
-
-            run = true;
-
-            while(run){
-              lineSensors.read();
-              if(leftReachedTape && lineSensors.value[4] >= threshold){
-                motors.stop();
-                rightReachedTape = true;
-                run = false;
-              } 
-              else if (rightReachedTape && lineSensors.value[0] >= threshold){
-              motors.stop();
-              leftReachedTape = true;
-              run = false;
-              }
-            }
-            delay(1000);
-
-            run = true;
-
-            motors.forward(speed);
-
-            while (run){
-              lineSensors.read();
-
-              if (!leftDone || !rightDone){   //  Runs if and only if one of the sides is not aligned.
-                //  Checks left side
-                if (leftReachedTape && lineSensors.value[0] < threshold){      //  Goes back if over tape.
-                  MOTORS.setLeftSpeed(-speed);
-                  leftOverTape = true;
-                  leftDone = false;
-                } 
-                else if(leftOverTape && lineSensors.value[0] >= threshold){  //  Only stops if it have been over the tape once.
-                  MOTORS.setLeftSpeed(0);
-                  leftDone = true;
-                }
-
-                //  Checks right side
-                if (rightReachedTape && lineSensors.value[2] < threshold){     //  Goes back if over tape.
-                  MOTORS.setRightSpeed(-speed);
-                  rightOverTape = true;
-                  rightDone = false;
-                } 
-                else if (rightOverTape && lineSensors.value[2] >= threshold){  //  Only stops if it have been over the tape once.
-                  MOTORS.setRightSpeed(0);
-                  rightDone = true;
-                }
-              } 
-              else { run = false; }    //  Stops aligning the Zumo when both sides have stopped.
-            }
-            break;
-    case 2: 
-            delay(1000);
-            bool lastRun = true;
-            float num = maxDistance - movementParameter;
-
-            encoders.reset();
-
-            MOTORS.setSpeeds(speed, speed);
-
-            while (lastRun){ if (encoders.getDistance() >= num){ motors.stop(); } }
-
-            break;
-    default:
-            break;
-  }
-
-  delay(100);
+    delay(100);
   }
 
   /*! CHALLENGE TWO.
