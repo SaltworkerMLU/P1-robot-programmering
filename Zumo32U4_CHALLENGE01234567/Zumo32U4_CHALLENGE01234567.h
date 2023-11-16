@@ -142,7 +142,7 @@ struct challenge {
    *  2. Untill detection of the white line at the far end of the challenge. */
   void three() {
     for (int i = 0; i < proxSensors.levelTwo; i++) { proxSensors.brightnessTwo[i] = i; }
-    proximitySensors.setBrightnessLevels(proxSensors.brightnessTwo, proxSensors.levelTwo);
+    PROXSENSORS.setBrightnessLevels(proxSensors.brightnessTwo, proxSensors.levelTwo);
     do {
       proxSensors.read();
       lineSensors.read();
@@ -221,7 +221,7 @@ struct challenge {
    *  You are challenged to get as many successfull passes as possible in a set amountof time. */
   void five() {
     for (int i = 0; i < proxSensors.levelFive; i++) { proxSensors.brightnessFive[i] = 2 * i; }
-    proximitySensors.setBrightnessLevels(proxSensors.brightnessFive, proxSensors.levelFive);
+    PROXSENSORS.setBrightnessLevels(proxSensors.brightnessFive, proxSensors.levelFive);
     bool eightFig = false;
     bool middlePoint = false;
     int count = 0;

@@ -2,16 +2,16 @@
 #include <Wire.h>
 #include <Zumo32U4.h>
 
-Zumo32U4ButtonA buttonA;
-Zumo32U4ButtonB buttonB;
-Zumo32U4ButtonC buttonC;
+Zumo32U4ButtonA BUTTONA;
+Zumo32U4ButtonB BUTTONB;
+Zumo32U4ButtonC BUTTONC;
 Zumo32U4Buzzer BUZZER;
-Zumo32U4LCD display;
+Zumo32U4LCD SCREEN;
 Zumo32U4Encoders ENCODERS;
 Zumo32U4IMU IMU;
-Zumo32U4LineSensors lineFollowerSensors;
+Zumo32U4LineSensors LINESENSORS;
 Zumo32U4Motors MOTORS;
-Zumo32U4ProximitySensors proximitySensors;
+Zumo32U4ProximitySensors PROXSENSORS;
 
 /*! This struct makes use of the provided display. */
 struct screen {
@@ -20,14 +20,14 @@ struct screen {
   /*! Prints {input} at displayLine. */
   void show(String input) {
   {
-    display.gotoXY(0, line);
-    display.print(input);
+    SCREEN.gotoXY(0, line);
+    SCREEN.print(input);
   }
 }
 
   /*! Clears display and sets displayLine to be {firstLine}. */
   void reRender() { 
-    display.clear();
+    SCREEN.clear();
     line = 0; 
   }
 } screen;
@@ -59,7 +59,7 @@ struct buttons {
     screen.show("A=+; B=-");
     screen.line = 1;
     screen.show("C=onfirm");
-    while (!buttonA.isPressed() && !buttonB.isPressed() && !buttonC.isPressed()) {} 
+    while (!BUTTONA.isPressed() && !BUTTONB.isPressed() && !BUTTONC.isPressed()) {} 
     screen.reRender();
   }
 
@@ -69,10 +69,10 @@ struct buttons {
    *  * buttonC -> end function. 
    *  Whilst function is running, keep protocol in range 1-7 and show variable protocol on display. */
   void getProtocol() {
-    while (!buttonC.getSingleDebouncedRelease()) {
+    while (!BUTTONC.getSingleDebouncedRelease()) {
       screen.show((String)protocol);
-      if (buttonA.getSingleDebouncedRelease()) { protocol++; }
-      if (buttonB.getSingleDebouncedRelease()) { protocol--; }
+      if (BUTTONA.getSingleDebouncedRelease()) { protocol++; }
+      if (BUTTONB.getSingleDebouncedRelease()) { protocol--; }
       if (protocol % 8 == 0) { protocol = -(protocol/8)*6 + 7; } // if (protocol == 0) { protocol = 7; } else if (protocol == 8) { protocol = 1; }
     }
     screen.reRender();
@@ -87,10 +87,10 @@ struct lineSensors {
   int threshold = 800;
 
   /*! CONSTRUCTOR. It executes as the very first thing when struct object called. */
-  lineSensors() { lineFollowerSensors.initFiveSensors(); }
+  lineSensors() { LINESENSORS.initFiveSensors(); }
 
   /*! Reads line follower sensors and updates value[3]. */
-  void read() { lineFollowerSensors.read(value, QTR_EMITTERS_ON); }
+  void read() { LINESENSORS.read(value, QTR_EMITTERS_ON); }
 
 } lineSensors;
 
@@ -114,23 +114,23 @@ struct proxSensors {
 
   /*! CONSTRUCTOR. It executes as the very first thing when struct object called. */
   proxSensors() {
-    proximitySensors.initThreeSensors();
-    proximitySensors.setPulseOffTimeUs(400);
-    proximitySensors.setPulseOnTimeUs(300);
+    PROXSENSORS.initThreeSensors();
+    PROXSENSORS.setPulseOffTimeUs(400);
+    PROXSENSORS.setPulseOnTimeUs(300);
   }
 
   /*! Reads proximity sensors and updates value[6]. */
   void read() {
-    proximitySensors.read();
+    PROXSENSORS.read();
 
-    value[0] = proximitySensors.countsLeftWithLeftLeds();
-    value[1] = proximitySensors.countsLeftWithRightLeds();
+    value[0] = PROXSENSORS.countsLeftWithLeftLeds();
+    value[1] = PROXSENSORS.countsLeftWithRightLeds();
 
-    value[2] = proximitySensors.countsFrontWithLeftLeds();
-    value[3] = proximitySensors.countsFrontWithRightLeds();
+    value[2] = PROXSENSORS.countsFrontWithLeftLeds();
+    value[3] = PROXSENSORS.countsFrontWithRightLeds();
 
-    value[4] = proximitySensors.countsRightWithLeftLeds();
-    value[5] = proximitySensors.countsRightWithRightLeds();
+    value[4] = PROXSENSORS.countsRightWithLeftLeds();
+    value[5] = PROXSENSORS.countsRightWithRightLeds();
   }
 
   /*! Returns error of side sensors. */
