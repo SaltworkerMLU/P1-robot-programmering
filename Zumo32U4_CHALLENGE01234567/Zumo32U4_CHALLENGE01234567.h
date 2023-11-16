@@ -55,7 +55,7 @@ struct challenge {
           MOTORS.setLeftSpeed(-speed);
           leftOverTape = true;
           leftDone = false;
-        } 
+        }
         else if(leftOverTape && lineSensors.value[0] >= threshold){  //  Only stops if it have been over the tape once.
           MOTORS.setLeftSpeed(0);
           leftDone = true;
@@ -79,6 +79,39 @@ struct challenge {
 
 
   }
+float getDistance(){
+  int wheelCirc = 13;
+  int countsL = ENCODERS.getCountsLeft();
+  int countsR = ENCODERS.getCountsRight();
+
+  float distanceL = countsL/900.0 * wheelCirc;
+  float distanceR = countsR/900.0 * wheelCirc;
+
+  return (distanceL + distanceR)/2;
+}
+void resetEncoders(){
+  ENCODERS.getCountsAndResetLeft();
+  ENCODERS.getCountsAndResetRight();
+}
+void stopAtLength() {
+  delay(1000);
+  int movementParameter = 35;
+  int maxDistance = 41;
+  int speed = 100;
+  bool lastRun = true;
+  float num = maxDistance - movementParameter;
+
+  resetEncoders();
+
+  motors.forward(speed);
+
+  while (lastRun){
+    if (getDistance() >= num){
+      motors.stop();
+    }
+  }
+
+}
 
   /*! CHALLENGE ONE.
    *  The Zumo shall be able to.
@@ -90,8 +123,6 @@ struct challenge {
   void one() {
     int threshold = 600;
     int speed = 100;
-    int movementParameter = 11;
-    int maxDistance = 41;
     String side = "";
     bool tapeReached = false;
 
@@ -110,12 +141,13 @@ struct challenge {
       tapeReached = true;
       side = "right";
     }
-    else if (tapeReached){
+    
+    if (tapeReached){
       alignZumo(side);
-      while (1){
-        
-      }
+      //  Drive a certain amount of length.
+      stopAtLength();
     }
+    
 
     delay(100);
   }
