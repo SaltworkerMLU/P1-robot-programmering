@@ -16,34 +16,72 @@ struct challenge {
     buzzer.intermission();
   }
 
-  void alignZumo(String side){
+  void alignZumo(String currentSide){
     int threshold = 600;
     int speed = 100;
-    bool run = true;
+    String side = currentSide;
+    bool run = true, miniRun = true;
     bool leftReachedTape = false, leftOverTape = false, leftDone = false;
     bool rightReachedTape = false, rightOverTape = false, rightDone = false;
 
     delay(500);
-    motors.forward(speed/2);
+
+    encoders.reset();
 
     while(run){
       lineSensors.read();
-      if(side == "left" && lineSensors.value[2] >= threshold){
-        leftReachedTape = true;
-        rightReachedTape = true;
+
+      if(encoders.getDistance() >= 2 && side == "right"){
+        encoders.reset();
+        delay(100);
+        motors.forward(-speed);
+        while(miniRun){
+          if(encoders.getDistance() <= -4){
+            motors.stop();
+            delay(200);
+            motors.right();
+            delay(800);
+            motors.stop();
+            miniRun = false;
+            side = "left";
+          }
+        }
+      }
+      if(encoders.getDistance() >= 2 && side == "left"){
+        encoders.reset();
+        delay(100);
+        motors.forward(-speed);
+        while(miniRun){
+          if(encoders.getDistance() <= -4){
+            motors.stop();
+            delay(200);
+            motors.left();
+            delay(600);
+            motors.stop();
+            miniRun = false;
+            side = "right";
+          }
+        }
+      }
+      else if(side == "left" && lineSensors.value[2] >= threshold){
         motors.stop();
         run = false;
       }
       else if (side == "right" && lineSensors.value[0] >= threshold){
-        leftReachedTape = true;
-        rightReachedTape = true;
         motors.stop();
         run = false;
+      }
+      else {
+        motors.forward(speed/2);
       }
     }
 
     delay(1000);
+
+    leftReachedTape = true;
+    rightReachedTape = true;
     run = true;
+
     motors.forward(speed);
 
     while (run){
@@ -79,34 +117,21 @@ struct challenge {
 
 
   }
-float getDistance(){
-  int wheelCirc = 13;
-  int countsL = ENCODERS.getCountsLeft();
-  int countsR = ENCODERS.getCountsRight();
 
-  float distanceL = countsL/900.0 * wheelCirc;
-  float distanceR = countsR/900.0 * wheelCirc;
-
-  return (distanceL + distanceR)/2;
-}
-void resetEncoders(){
-  ENCODERS.getCountsAndResetLeft();
-  ENCODERS.getCountsAndResetRight();
-}
 void stopAtLength() {
   delay(1000);
   int movementParameter = 35;
   int maxDistance = 41;
-  int speed = 100;
+  int speed = 200;
   bool lastRun = true;
   float num = maxDistance - movementParameter;
 
-  resetEncoders();
+  encoders.reset();
 
   motors.forward(speed);
 
   while (lastRun){
-    if (getDistance() >= num){
+    if (encoders.getDistance() >= num){
       motors.stop();
     }
   }
@@ -120,36 +145,39 @@ void stopAtLength() {
    *  3. Then drive.
    *  4. untill it is at a specific distance...
    *     ...to the back wall at the end of the hallway. */
-  void one() {
+  void one(){
     int threshold = 600;
     int speed = 100;
     String side = "";
-    bool tapeReached = false;
+    bool tapeReached = false, run = true;
 
-    lineSensors.read();
+    while(run){
 
-    if (lineSensors.value[0] < threshold && lineSensors.value[2] < threshold) {
-      motors.forward(speed);
-    }
-    else if (lineSensors.value[0] >= threshold && !tapeReached){
-      motors.stop();
-      tapeReached = true;
-      side = "left";
-    }
-    else if (lineSensors.value[2] >= threshold && !tapeReached){
-      motors.stop();
-      tapeReached = true;
-      side = "right";
-    }
-    
-    if (tapeReached){
-      alignZumo(side);
-      //  Drive a certain amount of length.
-      stopAtLength();
-    }
-    
+      lineSensors.read();
 
-    delay(100);
+      if (lineSensors.value[0] < threshold && lineSensors.value[2] < threshold) {
+        motors.forward(speed);
+      }
+      else if (lineSensors.value[0] >= threshold && !tapeReached){
+        motors.stop();
+        tapeReached = true;
+        side = "left";
+      }
+      else if (lineSensors.value[2] >= threshold && !tapeReached){
+        motors.stop();
+        tapeReached = true;
+        side = "right";
+      }
+      
+      if (tapeReached){
+        alignZumo(side);
+        //  Drive a certain amount of length.
+        stopAtLength();
+      }
+      
+
+      delay(100);
+    }
   }
 
   /*! CHALLENGE TWO.
