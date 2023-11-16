@@ -1,4 +1,6 @@
-#include "Zumo32U4_CHALLENGE01234567.h"
+#include "Zumo32U4_CHALLENGE01234567.h" 
+
+challenge challenge;
 
 void setup() {
   // put your setup code here, to run once:
@@ -7,27 +9,22 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  switch(buttons.protocol) {
-    case 0: challenge.zero();
-      break;
+  switch(challenge.zero()) {
     case 1: challenge.one();
-      break;
+            break;
     case 2: challenge.two();
-      break;
+            break;
     case 3: challenge.three();
-      break;
+            break;
     case 4: challenge.four();
-      break;
+            break;
     case 5: challenge.five();
-      break;
+            break;
     case 6: challenge.six();
-      break;
+            break;
     case 7: challenge.seven(); 
-      break;
+            break;
     default: // case 255:
-      screen.show("Done.");
-      buzzer.intermission();
-      delay(1000);
-      buttons.protocol = 0;
+      challenge.intermission();
   }
 }
