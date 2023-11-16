@@ -1,8 +1,117 @@
 #include "Zumo32U4_components.h"
 
+buttons buttons;
+encoders encoders;
+imu imu;
+lineSensors lineSensors;
+proxSensors proxSensors;
+motors motors;
+
+struct alignment {
+  int speed = 150;
+  int threshold = 600;
+  bool alignment = false;
+  int parameter = 45; //angle in degrees
+  bool leftReachedTape = false, leftOverTape = false, leftDone = false; //booleans necessary for the align function
+  bool rightReachedTape = false, rightOverTape = false, rightDone = false; //booleans necessary for the align function
+
+  bool aboveThreshold(){
+    lineSensors.read();
+    if (lineSensors.value[0]>threshold || lineSensors.value[2]>threshold || lineSensors.value[4]>threshold) { 
+      return true; 
+    } else { return false; }
+  }
+
+  /*! Align function.
+   *  As it is heavily used, it will be a reserved function for this struct. */
+   void align() {
+    if (lineSensors.value[0] >= threshold && !leftReachedTape){         //  Aligns from the left side.
+      leftReachedTape = true;
+      motors.stop();
+      checkOver();
+    } 
+    else if (lineSensors.value[2] >= threshold && !rightReachedTape){        //  Aligns from the right side
+      rightReachedTape = true;
+      motors.stop();
+      checkOver();
+    }
+  }
+
+  void checkOver(){
+    delay(500);
+    motors.forward(speed/2);
+
+    bool run = true;
+
+    while(run){
+      lineSensors.read();
+      if(leftReachedTape && lineSensors.value[2] >= threshold){
+        motors.stop();
+        rightReachedTape = true;
+        run = false;
+      } else if (rightReachedTape && lineSensors.value[0] >= threshold){
+        motors.stop();
+        leftReachedTape = true;
+        run = false;
+      }
+    }
+
+    delay(1000);
+
+    run = true;
+
+    motors.forward(speed);
+
+    while (run){
+      lineSensors.read();
+
+      if (!leftDone || !rightDone){   //  Runs if and only if one of the sides is not aligned.
+        //  Checks left side
+        if (leftReachedTape && lineSensors.value[0] < threshold){      //  Goes back if over tape.
+          MOTORS.setLeftSpeed(-speed);
+          leftOverTape = true;
+          leftDone = false;
+        } 
+        else if(leftOverTape && lineSensors.value[0] >= threshold){  //  Only stops if it have been over the tape once.
+          MOTORS.setLeftSpeed(0);
+          leftDone = true;
+        }
+
+        //  Checks right side
+        if (rightReachedTape && lineSensors.value[2] < threshold){     //  Goes back if over tape.
+          MOTORS.setRightSpeed(-speed);
+          rightOverTape = true;
+          rightDone = false;
+        } 
+        else if (rightOverTape && lineSensors.value[2] >= threshold){  //  Only stops if it have been over the tape once.
+          MOTORS.setRightSpeed(0);
+          rightDone = true;
+        }
+      } 
+      else { run = false; }   //  Stops aligning the Zumo when both sides have stopped.
+    }
+  }
+  void turnByDegree(int degree){
+    imu.reset();
+    imu.dAngle();
+    if (degree<0){
+      while (degree<imu.zumoAngle){
+        motors.turn(speed);
+        imu.dAngle();
+      }
+    }
+    if (parameter>0){
+      while (parameter>imu.zumoAngle){
+        motors.turn(-speed);
+        imu.dAngle();
+      }
+    }
+    motors.stop();
+  }
+} alignment;
+
 /*! This struct contains all 8 challenges from 0 to 7. */
 struct challenge {
-
   /*! CHALLENGE ZERO.
    *  You shall program the Zumo to have a programmable interface using 
    *  - the encoders.
@@ -13,7 +122,71 @@ struct challenge {
     /* Move&rotate Matthias function */
     buttons.pressAnyKeyToContinue();
     buttons.getProtocol();
-    buzzer.intermission();
+    intermission();
+  }
+
+  void alignZumo(String side){
+    int threshold = 600;
+    int speed = 100;
+    bool run = true;
+    bool leftReachedTape = false, leftOverTape = false, leftDone = false;
+    bool rightReachedTape = false, rightOverTape = false, rightDone = false;
+
+    delay(500);
+    motors.forward(speed/2);
+
+    while(run){
+      lineSensors.read();
+      if(side == "left" && lineSensors.value[2] >= threshold){
+        leftReachedTape = true;
+        rightReachedTape = true;
+        motors.stop();
+        run = false;
+      }
+      else if (side == "right" && lineSensors.value[0] >= threshold){
+        leftReachedTape = true;
+        rightReachedTape = true;
+        motors.stop();
+        run = false;
+      }
+    }
+
+    delay(1000);
+    run = true;
+    motors.forward(speed);
+
+    while (run){
+      lineSensors.read();
+
+      if (!leftDone || !rightDone){   //  Runs if and only if one of the sides is not aligned.
+        //  Checks left side
+        if (leftReachedTape && lineSensors.value[0] < threshold){      //  Goes back if over tape.
+          MOTORS.setLeftSpeed(-speed);
+          leftOverTape = true;
+          leftDone = false;
+        } 
+        else if(leftOverTape && lineSensors.value[0] >= threshold){  //  Only stops if it have been over the tape once.
+          MOTORS.setLeftSpeed(0);
+          leftDone = true;
+        }
+
+        //  Checks right side
+        if (rightReachedTape && lineSensors.value[2] < threshold){     //  Goes back if over tape.
+          MOTORS.setRightSpeed(-speed);
+          rightOverTape = true;
+          rightDone = false;
+        }
+        else if (rightOverTape && lineSensors.value[2] >= threshold){  //  Only stops if it have been over the tape once.
+          MOTORS.setRightSpeed(0);
+          rightDone = true;
+        }
+      }
+      else {
+        run = false;
+      }    //  Stops aligning the Zumo when both sides have stopped.
+    }
+
+
   }
 
   /*! CHALLENGE ONE.
@@ -25,100 +198,35 @@ struct challenge {
    *     ...to the back wall at the end of the hallway. */
   void one() {
     int threshold = 600;
-    int caseStep = 0;
     int speed = 100;
     int movementParameter = 11;
     int maxDistance = 41;
-    bool run;
-    bool leftReachedTape = false, leftOverTape = false, leftDone = false;
-    bool rightReachedTape = false, rightOverTape = false, rightDone = false;
+    String side = "";
+    bool tapeReached = false;
+
     lineSensors.read();
 
-    if (lineSensors.value[0] < threshold && lineSensors.value[2] < threshold) { caseStep = 0; }  //  Goes forward when the zumo have not reached the tape.
-    else if (lineSensors.value[0] >= threshold && !leftReachedTape){  //  Aligns from the left side.
-    caseStep = 1;
-    leftReachedTape = true;
-    } 
-    else if (lineSensors.value[2] >= threshold && !rightReachedTape){ //  Aligns from the right side
-      caseStep = 1;
-      rightReachedTape = true;
-    } 
-    else { caseStep = 2; } //  Goes forward when the Zumo is aligned.
+    if (lineSensors.value[0] < threshold && lineSensors.value[2] < threshold) {
+      motors.forward(speed);
+    }
+    else if (lineSensors.value[0] >= threshold && !tapeReached){
+      motors.stop();
+      tapeReached = true;
+      side = "left";
+    }
+    else if (lineSensors.value[2] >= threshold && !tapeReached){
+      motors.stop();
+      tapeReached = true;
+      side = "right";
+    }
+    else if (tapeReached){
+      alignZumo(side);
+      while (1){
+        
+      }
+    }
 
-  switch (caseStep){    //    Either the zumo goes forward or
-    case 0: motors.forward();
-            break;
-    case 1: motors.stop();
-            delay(500);
-            motors.forward(speed/2);
-
-            run = true;
-
-            while(run){
-              lineSensors.read();
-              if(leftReachedTape && lineSensors.value[4] >= threshold){
-                motors.stop();
-                rightReachedTape = true;
-                run = false;
-              } 
-              else if (rightReachedTape && lineSensors.value[0] >= threshold){
-              motors.stop();
-              leftReachedTape = true;
-              run = false;
-              }
-            }
-            delay(1000);
-
-            run = true;
-
-            motors.forward(speed);
-
-            while (run){
-              lineSensors.read();
-
-              if (!leftDone || !rightDone){   //  Runs if and only if one of the sides is not aligned.
-                //  Checks left side
-                if (leftReachedTape && lineSensors.value[0] < threshold){      //  Goes back if over tape.
-                  MOTORS.setLeftSpeed(-speed);
-                  leftOverTape = true;
-                  leftDone = false;
-                } 
-                else if(leftOverTape && lineSensors.value[0] >= threshold){  //  Only stops if it have been over the tape once.
-                  MOTORS.setLeftSpeed(0);
-                  leftDone = true;
-                }
-
-                //  Checks right side
-                if (rightReachedTape && lineSensors.value[2] < threshold){     //  Goes back if over tape.
-                  MOTORS.setRightSpeed(-speed);
-                  rightOverTape = true;
-                  rightDone = false;
-                } 
-                else if (rightOverTape && lineSensors.value[2] >= threshold){  //  Only stops if it have been over the tape once.
-                  MOTORS.setRightSpeed(0);
-                  rightDone = true;
-                }
-              } 
-              else { run = false; }    //  Stops aligning the Zumo when both sides have stopped.
-            }
-            break;
-    case 2: 
-            delay(1000);
-            bool lastRun = true;
-            float num = maxDistance - movementParameter;
-
-            encoders.reset();
-
-            MOTORS.setSpeeds(speed, speed);
-
-            while (lastRun){ if (encoders.getDistance() >= num){ motors.stop(); } }
-
-            break;
-    default:
-            break;
-  }
-
-  delay(100);
+    delay(100);
   }
 
   /*! CHALLENGE TWO.
@@ -253,10 +361,10 @@ struct challenge {
         count++;
         while (lineSensors.value[4] > 400) { lineSensors.read(); }
       }
-      screen.reRender();
-      screen.show((String)proxSensors.value[2] + "\t" + proxSensors.value[3]);
-      screen.line = 1;
-      screen.show((String)count);
+      SCREEN.clear();
+      SCREEN.print((String)proxSensors.value[2] + "\t" + proxSensors.value[3]);
+      SCREEN.gotoXY(0, 1);
+      SCREEN.print((String)count);
       Serial.println((String)lineSensors.value[0] + "\t" +  lineSensors.value[2] + "\t" +  lineSensors.value[4]); // OPTIONAL
     }
   }
@@ -268,7 +376,23 @@ struct challenge {
    *  3. Turn the a set amount of degrees
    *  4. Before driving forward untill detecting the other white line. */
   void six() {
-    
+    imu.calibrateTurn(1024);
+    while (true) {
+      lineSensors.read();
+      if(!alignment.alignment && !alignment.aboveThreshold()){ motors.forward(alignment.speed); }
+      if(!alignment.alignment && alignment.aboveThreshold()){
+        SCREEN.print("STOP!");
+        SCREEN.gotoXY(0, 0);
+        motors.stop();
+        alignment.align();
+        alignment.alignment=true;
+        delay(2000);
+        alignment.turnByDegree(alignment.parameter);
+        motors.forward(alignment.speed);
+        delay(2000);
+      }
+      if(alignment.alignment && alignment.aboveThreshold()) { motors.stop(); }
+    }
   }
 
  /*! CHALLENGE SEVEN.
@@ -331,12 +455,27 @@ struct challenge {
           lineSensors.read();
           if (lineSensors.value[0] > lineSensors.threshold || lineSensors.value[2] > lineSensors.threshold || lineSensors.value[4] > lineSensors.threshold) { motors.stop(); }
           else{
-            screen.reRender();
-            screen.show((String)imu.zumoAngle);
+            SCREEN.clear();
+            SCREEN.print((String)imu.zumoAngle);
             imu.dAngle();
             MOTORS.setSpeeds(200+imu.zumoAngle,200-imu.zumoAngle);
           }
       } 
     }
+  }
+
+  /*! Indicates challenge start and finish. */
+  void intermission(uint8_t attention=10, int windup=800) {
+    ledRed(1);    // Turn on red LED
+    BUZZER.playFrequency(400, windup/2, attention); // 400Hz sound, ms/2, 15=max volume & 0 = min volume
+    delay(windup/2);                                // Prevent the prior function from being overwritten
+    ledYellow(1); // Turn on yellow LED
+    BUZZER.playFrequency(800, windup/2, attention); // 800Hz sound
+    delay(windup/2);                                // Prevent the prior function from being overwritten
+    ledRed(0);    // Turn off red LED
+    ledYellow(0); // Turn off yellow LED
+    ledGreen(1);  // Turn on green LED. No need to turn it off. Green LED lights up when Serial monitor active
+    BUZZER.playFrequency(1200, windup, attention);  // 1200Hz lyd
+    delayMicroseconds(1); // After 1us, execute next line in the program. Without the delay, the buzzer will play forever.
   }
 } challenge;
