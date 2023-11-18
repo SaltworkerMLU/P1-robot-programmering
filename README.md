@@ -15,5 +15,5 @@ Using object-oriented programming (OOP), the solution to Challenge_0 is split in
 + 2x Header files ( .h )
 + 2x C++ files ( .cpp )
 
-## Class UML diagram
+### Class UML diagram
 ![image](media/Challenge_0.jpg)
