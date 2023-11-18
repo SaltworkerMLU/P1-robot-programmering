@@ -24,7 +24,5 @@ void loop() {
             break;
     case 7: challenge.seven(); 
             break;
-    default: // case 255:
-      challenge.intermission();
   }
 }
