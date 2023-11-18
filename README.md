@@ -1,4 +1,4 @@
-# Miniproject "Robot programmering"
+# AAU Miniproject "Robot programmering"
 ### ROB1 176 
 | **STUDY NR**       | **FULL NAME**                   | **EMAIL**                 |
 | ------------------ | ------------------------------- | ------------------------- |
