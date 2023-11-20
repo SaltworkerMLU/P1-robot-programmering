@@ -2,7 +2,7 @@
 
 /*! This struct makes use of the display equipped on the Zumo.
  *  Switch between inheriting Zumo32U4LCD and Zumo32U4OLED depending on the display on the used Zumo. */
-struct display : protected Zumo32U4LCD {};
+struct display : protected Zumo32U4OLED {};
 
 /*! This struct makes use of the buzzer */
 struct buzzer : protected Zumo32U4Buzzer {};
@@ -11,7 +11,7 @@ struct buzzer : protected Zumo32U4Buzzer {};
 struct zumo : protected display, protected buzzer, protected buttons, protected encoders, 
               protected imu, protected lineSensors, protected proxSensors, protected motors {
   /*!  */
-  int speed = 150;
+  int speed = 100;
 
   /*! The great decider between whether a line is white/black */
   int threshold = 600;
@@ -21,23 +21,26 @@ struct zumo : protected display, protected buzzer, protected buttons, protected 
 
   /*! Zumo turn angle in degrees */
   int parameter = 45;
+
+  bool run = true, miniRun = true;
+
+  String side = "";
   
   /*! booleans necessary for the align function */
   bool leftReachedTape = false, leftOverTape = false, leftDone = false;
   bool rightReachedTape = false, rightOverTape = false, rightDone = false;
 
-  /*! Checks if either of the line sensors of the Zumo surpass the desired threshold */
+    /*! Checks if either of the line sensors of the Zumo surpass the desired threshold */
   bool aboveThreshold();
+  
+  void alignZumo();
 
-  /*! Use the gyrometer, the IMU, to turn the Zumo by {degrees} */
-  void turnByDegree(int degree);
-
-  /*! Make the Zumo align with the line ahead of it */
   void align();
 
-  /*! Whilst aligning, check if the Zumo is fully aligned */
-  void checkOver();
-    
+  void stopAtLength();
+  
+  /*! Use the gyrometer, the IMU, to turn the Zumo by {degrees} */
+  void turnByDegree(int degree);
 };
 
 /*! This struct contains all 8 challenges from 0 to 7. */
@@ -49,8 +52,6 @@ struct challenge : private zumo {
    *  - the buttons.
    *  so that you can launch set solutions with set parameters. */
   int zero();
-
-  void alignZumo(String side);
 
   /*! CHALLENGE ONE.
    *  The Zumo shall be able to.
