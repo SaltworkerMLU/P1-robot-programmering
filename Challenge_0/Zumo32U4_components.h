@@ -3,10 +3,10 @@
 
 /*! This struct makes use of all 3 buttons. */
 struct buttons : public Zumo32U4ButtonA, public Zumo32U4ButtonB, public Zumo32U4ButtonC {
-  uint8_t protocol = 0;
+  uint8_t protocol = 1;
 
   /*! While neither button A, B, nor C has been pressed: Do nothing. */
-  void pressAnyKeyToContinue();
+  bool pressAnyKeyToContinue();
 
   /*! Function to acquire variable protocol. Update protocol by pressing and releasing:
    *  * buttonA -> Add 1 to protocol.
@@ -19,10 +19,7 @@ struct buttons : public Zumo32U4ButtonA, public Zumo32U4ButtonB, public Zumo32U4
 /*! This struct makes use of the line sensors. */
 struct lineSensors : public Zumo32U4LineSensors {
   /*! Line sensor values are stored here after lineSensors::read() has been called. */
-  uint16_t value[5];
-
-  /*! Stored threshold regarding black/white. */
-  int threshold = 800;
+  uint16_t value[3];
 
   /*! CONSTRUCTOR. It executes as the very first thing when struct object called. */
   lineSensors();
@@ -38,29 +35,16 @@ struct proxSensors : public Zumo32U4ProximitySensors {
 
   /*! Length of array brightness. Note how it is a "const".
    *  Because it is in a struct, "static" has to be put first. */
-  static const uint8_t levelTwo = 20;
+  static const uint8_t level = 20;
 
   /*! Array of brightness levels. */
-  uint16_t brightnessTwo[levelTwo];
-
-  /*! Length of array brightness. Note how it is a "const".
-   *  Because it is in a struct, "static" has to be put first. */
-  static const uint8_t levelFive = 13;
-
-  /*! Array of brightness levels. */
-  uint16_t brightnessFive[levelFive];
+  uint16_t brightness[level];
 
   /*! CONSTRUCTOR. It executes as the very first thing when struct object called. */
   proxSensors();
 
   /*! Reads proximity sensors and updates value[6]. */
   void read();
-
-  /*! Returns error of side sensors. */
-  float getError();
-
-  /*! Returns error of front sensors. */
-  float getErrorFront();
 };
 
 /*! This struct makes use of the IMU. */
@@ -68,8 +52,8 @@ struct imu : public Zumo32U4IMU {
   //These values are explicitly used for the functions calibrateTurn() & dAngle()
   int16_t offset; // Average reading using calibrateTurn()... an offset
   uint16_t lastUpdate; // Stores old time in microseconds using micros()
-  uint32_t turnAngle = 0; // Turn angle which needs further conversion
-  uint32_t zumoAngle = 0; // Zumo32U4 turn angle (THE ONE)
+  int32_t turnAngle = 0; // Turn angle which needs further conversion
+  int32_t zumoAngle = 0; // Zumo32U4 turn angle (THE ONE)
 
   /*! Initializing the IMU takes multiple commands, thus this singular function has been made */
   void initMAG();
@@ -84,8 +68,8 @@ struct imu : public Zumo32U4IMU {
    *  DO NOT DELAY CODE WHILST USING THIS USING e.g. delay(). Inconsistencies will occur. */
   void dAngle();
 
-  /*! Y IS THIS A FUNCTION??? */
-  int gyroAdjust();
+  /*! Ends challenge if Zumo turned upside down. */
+  bool failsafe();
 };
 
 /*! This struct makes use of the motors. */
@@ -97,13 +81,10 @@ struct motors : public Zumo32U4Motors {
   void stop();
 
   /*! Turn the Zumo to the left */
-  void left();
+  void left(int speed=100);
 
   /*! Turn the Zumo to the right */
-  void right();
-
-  /*! Turn the Zumo using both motors by {speed} */
-  void turn(int spd);
+  void right(int speed=100);
 };
 
 /*! This struct makes use of the encoders. */
@@ -117,6 +98,6 @@ struct encoders : public Zumo32U4Encoders {
   /*! Resets encoders and updates value[2] */
   void reset();
 
-  /*! Reads encoders and converts the value to distance. Updates value[2] */
-  float getDistance();
+  /*! Reads encoders and converts the value to distance in mm. Updates value[2] */
+  float readDistance();
 };

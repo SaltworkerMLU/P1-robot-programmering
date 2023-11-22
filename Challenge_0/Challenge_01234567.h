@@ -16,31 +16,17 @@ struct zumo : protected display, protected buzzer, protected buttons, protected 
   /*! The great decider between whether a line is white/black */
   int threshold = 600;
 
-  /*! Is the Zumo fully aligned? */
-  bool alignment = false;
+  /*! Zumo turn angle in degrees. Defined in challenge::selectParameters() */
+  float turnParameter;
 
-  /*! Zumo turn angle in degrees */
-  int parameter = 45;
+  /*! Zumo drive forward in cm. Defined in challenge::selectParameters() */
+  float moveParameter;
 
-  bool run = true, miniRun = true;
-
-  String side = "";
-  
-  /*! booleans necessary for the align function */
-  bool leftReachedTape = false, leftOverTape = false, leftDone = false;
-  bool rightReachedTape = false, rightOverTape = false, rightDone = false;
-
-    /*! Checks if either of the line sensors of the Zumo surpass the desired threshold */
+  /*! Checks if either of the line sensors of the Zumo surpass the desired threshold */
   bool aboveThreshold();
-  
-  void alignZumo();
 
+  /*! Makes the Zumo align to a line ahead of it. */
   void align();
-
-  void stopAtLength();
-  
-  /*! Use the gyrometer, the IMU, to turn the Zumo by {degrees} */
-  void turnByDegree(int degree);
 };
 
 /*! This struct contains all 8 challenges from 0 to 7. */
@@ -106,4 +92,7 @@ struct challenge : private zumo {
 
   /*! Indicates challenge start and finish. */
   void intermission(uint8_t attention=10, int windup=800);
+
+  /*! Select parameters moveParameter and turnParameter */
+  void selectParameters();
 };

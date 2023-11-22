@@ -1,9 +1,10 @@
 #include "Zumo32U4_components.h"
 
-void buttons::pressAnyKeyToContinue() { 
-  while (!Zumo32U4ButtonA::isPressed() && 
-         !Zumo32U4ButtonB::isPressed() && 
-         !Zumo32U4ButtonC::isPressed()) {} 
+bool buttons::pressAnyKeyToContinue() { 
+  if (!Zumo32U4ButtonA::getSingleDebouncedRelease() && 
+      !Zumo32U4ButtonB::getSingleDebouncedRelease() && 
+      !Zumo32U4ButtonC::getSingleDebouncedRelease()) { return true; }
+  return false; // If any of the above buttons is pressed
 }
 
 bool buttons::getProtocol() {
@@ -14,7 +15,7 @@ bool buttons::getProtocol() {
   else { return false; }
 }
 
-lineSensors::lineSensors() { Zumo32U4LineSensors::initFiveSensors(); }
+lineSensors::lineSensors() { Zumo32U4LineSensors::initThreeSensors(); }
 
 void lineSensors::read() { Zumo32U4LineSensors::read(value, QTR_EMITTERS_ON); }
 
@@ -22,6 +23,8 @@ proxSensors::proxSensors() {
   Zumo32U4ProximitySensors::initThreeSensors();
   Zumo32U4ProximitySensors::setPulseOffTimeUs(400);
   Zumo32U4ProximitySensors::setPulseOnTimeUs(300);
+  for (int i = 0; i < proxSensors::level; i++) { proxSensors::brightness[i] = i; }
+  proxSensors::setBrightnessLevels(proxSensors::brightness, proxSensors::level);
 }
 
 void proxSensors::read() {
@@ -36,10 +39,6 @@ void proxSensors::read() {
   value[4] = Zumo32U4ProximitySensors::countsRightWithLeftLeds();
   value[5] = Zumo32U4ProximitySensors::countsRightWithRightLeds();
 }
-
-float proxSensors::getError() { return value[5]-(value[0]-0.2); }
-
-float proxSensors::getErrorFront() { return value[3]-value[2]; }
 
 void imu::initMAG() {
   Wire.begin();
@@ -77,26 +76,19 @@ void imu::dAngle() {
   zumoAngle = (((int32_t)turnAngle >> 16) * 360) >> 16; // Even more fancy maths
 }
 
-int imu::gyroAdjust() { 
-  imu::dAngle();
-  return (180-zumoAngle)/9; 
+bool imu::failsafe() {
+  Zumo32U4IMU::readAcc();
+  if (Zumo32U4IMU::a.z <= 0) { return false; }
+  return true; // Else-statement not needed with return.
 }
 
 void motors::forward(int speed=100) { Zumo32U4Motors::setSpeeds(speed, speed); }
 
 void motors::stop() { Zumo32U4Motors::setSpeeds(0, 0); }
 
-void motors::left() { Zumo32U4Motors::setSpeeds(-100,0); }
+void motors::left(int speed=100) { Zumo32U4Motors::setSpeeds(speed, -speed); }
 
-void motors::right() { Zumo32U4Motors::setSpeeds(0,-100); }
-
-void motors::turn(int speed) {
-  //first turns on the spot and then moves slightly forward while turning
-  Zumo32U4Motors::setSpeeds(speed,-speed);
-  delay(20);
-  Zumo32U4Motors::setSpeeds(speed,-speed);
-  delay(75);
-}
+void motors::right(int speed=100) { Zumo32U4Motors::setSpeeds(-speed, speed); }
 
 void encoders::read() {
   value[0] = Zumo32U4Encoders::getCountsLeft();
@@ -108,13 +100,8 @@ void encoders::reset() {
   value[1] = Zumo32U4Encoders::getCountsAndResetRight();
 }
 
-float encoders::getDistance() {
-  float wheelCirc = 13;
-  int countsL = Zumo32U4Encoders::getCountsLeft();
-  int countsR = Zumo32U4Encoders::getCountsRight();
-
-  float distanceL = countsL/900.0 * wheelCirc;
-  float distanceR = countsR/900.0 * wheelCirc;
-
-  return (distanceL + distanceR)/2;
+float encoders::readDistance() {
+  encoders::value[0] = 10 * 8 * acos(0.0) * Zumo32U4Encoders::getCountsLeft() / 900;
+  encoders::value[1] = 10 * 8 * acos(0.0) * Zumo32U4Encoders::getCountsRight() / 900;
+  return (value[0] + value[1])/2; // Average of the two
 }
