@@ -1,3 +1,4 @@
+Hi
 # AAU Miniproject "Robot programmering"
 ### ROB1 Gr.176 
 | **STUDY NR**      | **FULL NAME**                   | **EMAIL**                 |
