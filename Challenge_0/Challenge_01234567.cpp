@@ -9,28 +9,46 @@ bool zumo::aboveThreshold() {
 }
 
 void zumo::align(){
-    bool side; // 0 = left; 1 = right
+  bool side; // 0 = left; 1 = right
 
-    motors::forward(speed); // Start off by setting the Zumo to drive forward...
-    while (!aboveThreshold()) {} // ... until Zumo crosses a line.
+  motors::forward(speed); // Start off by setting the Zumo to drive forward...
+  while (!aboveThreshold()) {} // ... until Zumo crosses a line.
 
-    if (lineSensors::value[0] >= threshold) { side = 0; } // Zumo has left side above line
-    else if (lineSensors::value[2] >= threshold) { side = 1; } // Zumo has right side above line
+  if (lineSensors::value[0] >= threshold) { side = 0; } // Zumo has left side above line
+  else if (lineSensors::value[2] >= threshold) { side = 1; } // Zumo has right side above line
 
-    while(lineSensors::value[2*!side] < threshold) { lineSensors::read(); } // While the other line sensor does not see the line...
-    while(aboveThreshold()) { lineSensors::read(); } // While either line sensor sees the line...
-    motors::forward(-speed); // Pull the brakes. We're going back to align that shit
+  while(lineSensors::value[2*!side] < threshold) { lineSensors::read(); } // While the other line sensor does not see the line...
+  while(aboveThreshold()) { lineSensors::read(); } // While non of the line sensors see the line...
+  motors::forward(-speed); // Pull the brakes. We're going back to align that shit
 
-    while (lineSensors::value[2] < threshold ||
-           lineSensors::value[0] < threshold){
-      lineSensors::read();
+  encoders::reset(); // For alignment usage
 
-      if(lineSensors::value[0] >= threshold) { Zumo32U4Motors::setLeftSpeed(0); }
-      else { Zumo32U4Motors::setLeftSpeed(-speed); } // Aligning left side
+  bool doneOnce = false;
 
-      if (lineSensors::value[2] >= threshold) { Zumo32U4Motors::setRightSpeed(0); }
-      else { Zumo32U4Motors::setRightSpeed(-speed); } // Aligning right side
+  while (lineSensors::value[2] < threshold ||
+         lineSensors::value[0] < threshold){
+    lineSensors::read();
+
+    if(lineSensors::value[0] >= threshold) { Zumo32U4Motors::setLeftSpeed(0); }
+    else { Zumo32U4Motors::setLeftSpeed(-speed); } // Aligning left side
+
+    if (lineSensors::value[2] >= threshold) { Zumo32U4Motors::setRightSpeed(0); }
+    else { Zumo32U4Motors::setRightSpeed(-speed); } // Aligning right side
+
+    if (encoders::readDistance() <= -20 && doneOnce == false) { // left side
+      Zumo32U4Motors::setSpeeds(!side*2*speed, side*2*speed); 
+      delay(400);
+      if (side == true) { 
+        Zumo32U4Motors::setSpeeds(2*speed, -2*speed);
+        delay(400);
+      }
+      else {
+        Zumo32U4Motors::setSpeeds(-2*speed, 2*speed);
+        delay(400);
+      }
+      doneOnce = true;
     }
+  }
 }
 
 int challenge::zero() {
@@ -81,7 +99,6 @@ void challenge::three() {
     Zumo32U4Motors::setSpeeds(150-30*(proxSensors::value[5]-(proxSensors::value[0]-0.2))-15*(proxSensors::value[3]-proxSensors::value[2]),
                      150+30*(proxSensors::value[5]-(proxSensors::value[0]-0.2))+15*(proxSensors::value[3]-proxSensors::value[2]));
     delay(5);
-    Serial.println((String)proxSensors::value[0] + "\t" + proxSensors::value[2] + " " + proxSensors::value[3] + "\t" + proxSensors::value[5]);
   } while(lineSensors::value[0]<zumo::threshold && lineSensors::value[1]<zumo::threshold && lineSensors::value[2]<zumo::threshold);
   motors::stop();
 }
@@ -174,10 +191,10 @@ void challenge::seven() {
   delay(100);
   motors::stop();
   imu::calibrateTurn(1024);
-  do{
+  while (!aboveThreshold()){
     imu::dAngle();
     motors::setSpeeds(200+((180-imu::zumoAngle)/72),200-((180-imu::zumoAngle)/72));
-  } while (!aboveThreshold());
+  }
   motors::stop();
 }
 
