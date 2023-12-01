@@ -165,10 +165,12 @@ void challenge::six() {
 
 void challenge::seven() {
   zumo::align();
-  motors::forward(100);
+  do{
+    imu::dAngle();
+    motors::setSpeeds(200+((180-imu::zumoAngle)/9),200-((180-imu::zumoAngle)/9));
+    delay(100);
+  } while (!abovethreshold);
   delay(1000); // Let the Zumo drive past the first line
-  while (!aboveThreshold()) {}
-
   motors::stop();
 }
 
