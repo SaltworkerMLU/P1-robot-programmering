@@ -81,6 +81,7 @@ void challenge::three() {
     Zumo32U4Motors::setSpeeds(150-30*(proxSensors::value[5]-(proxSensors::value[0]-0.2))-15*(proxSensors::value[3]-proxSensors::value[2]),
                      150+30*(proxSensors::value[5]-(proxSensors::value[0]-0.2))+15*(proxSensors::value[3]-proxSensors::value[2]));
     delay(5);
+    Serial.println((String)proxSensors::value[0] + "\t" + proxSensors::value[2] + " " + proxSensors::value[3] + "\t" + proxSensors::value[5]);
   } while(lineSensors::value[0]<zumo::threshold && lineSensors::value[1]<zumo::threshold && lineSensors::value[2]<zumo::threshold);
   motors::stop();
 }
@@ -154,22 +155,29 @@ void challenge::six() {
     while (turnParameter > imu::zumoAngle){ imu::dAngle(); }  // while turnParameter positive
   }
   motors::stop();
-
-  motors::setSpeeds(200+((180-getTurnAngleInDegrees())/9),200-((180-getTurnAngleInDegrees())/9));
+  motors::forward(100); // Let the Zumo drive past the first line
+  delay(100);
+  do{
+    imu::dAngle();
+    motors::setSpeeds(200+((180-imu::zumoAngle)/72),200-((180-imu::zumoAngle)/72));
+  } while (!aboveThreshold());
+  //motors::setSpeeds(200+((180-getTurnAngleInDegrees())/9),200-((180-getTurnAngleInDegrees())/9));
   delay(1000); // Let the Zumo drive past the first line
-  while (!zumo::aboveThreshold()) {}
+  while (!aboveThreshold()) {}
 
   motors::stop();
 }
 
 void challenge::seven() {
   zumo::align();
+  motors::forward(100); // Let the Zumo drive past the first line
+  delay(100);
+  motors::stop();
+  imu::calibrateTurn(1024);
   do{
     imu::dAngle();
-    motors::setSpeeds(200+((180-imu::zumoAngle)/9),200-((180-imu::zumoAngle)/9));
-    delay(100);
-  } while (!abovethreshold);
-  delay(1000); // Let the Zumo drive past the first line
+    motors::setSpeeds(200+((180-imu::zumoAngle)/72),200-((180-imu::zumoAngle)/72));
+  } while (!aboveThreshold());
   motors::stop();
 }
 
