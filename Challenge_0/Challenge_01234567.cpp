@@ -78,15 +78,19 @@ void challenge::two() {
   speed = 200;
   while (imu::failsafe()) { // Turn the Zumo upside down to end challenge
     lineSensors::read();
-    if (lineSensors::value[0]>=threshold){ 
-      motors::right(speed);
-      delay(95);
+  if (lineSensors::value[0]>=threshold){ 
+    Zumo32u4motors::setSpeeds(-speed,speed);
+    delay(25);
+    Zumo32u4motors::setSpeeds(-speed,(0.75*speed));
+    delay(75);
     } 
-    else if (lineSensors::value[2]>=threshold){ 
-      motors::left(speed);
-      delay(95);
+  else if (lineSensors::value[2]>=threshold){ 
+    Zumo32u4motors::setSpeeds(speed,-speed);
+    delay(25);
+    Zumo32u4motors::setSpeeds(speed,(0.75*-speed));
+    delay(75);
     }
-    else { motors::forward(speed); }
+  else { motors::forward(speed); }
   }
   motors::stop();
   speed = 100;
