@@ -156,7 +156,7 @@ void challenge::six() {
   }
   motors::stop();
 
-  motors::forward(speed);
+  motors::setSpeeds(200+((180-getTurnAngleInDegrees())/9),200-((180-getTurnAngleInDegrees())/9));
   delay(1000); // Let the Zumo drive past the first line
   while (!zumo::aboveThreshold()) {}
 
