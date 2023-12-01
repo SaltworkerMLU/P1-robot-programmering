@@ -81,7 +81,6 @@ void challenge::three() {
     Zumo32U4Motors::setSpeeds(150-30*(proxSensors::value[5]-(proxSensors::value[0]-0.2))-15*(proxSensors::value[3]-proxSensors::value[2]),
                      150+30*(proxSensors::value[5]-(proxSensors::value[0]-0.2))+15*(proxSensors::value[3]-proxSensors::value[2]));
     delay(5);
-    Serial.println((String)proxSensors::value[0] + "\t" + proxSensors::value[2] + " " + proxSensors::value[3] + "\t" + proxSensors::value[5]);
   } while(lineSensors::value[0]<zumo::threshold && lineSensors::value[1]<zumo::threshold && lineSensors::value[2]<zumo::threshold);
   motors::stop();
 }
