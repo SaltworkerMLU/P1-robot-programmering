@@ -226,8 +226,12 @@ if (degree<0){
 }
 if (parameter>0){
   while (parameter>angle){
-    turn(-speed);
+    turn(speed);
     angle = getTurnAngleInDegrees();
   }}
+else if (parameter<0){
+  while (parameter>angle){
+    turn(-speed);
+    angle = getTurnAngleInDegrees();
 stop();
 }
