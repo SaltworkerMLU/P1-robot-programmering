@@ -456,6 +456,8 @@ int chsValue( int challenge ){
 
   while (chsValue){
     if (buttonA.isPressed()){
+      value++;
+
       if ( value > 7 && challenge == 0){
         value = 1;
       }
@@ -463,14 +465,12 @@ int chsValue( int challenge ){
         value = 41;
       }
       else if ( challenge == 6 ){
+        value--;
         value += 5;
 
         if ( value > 180 ){
           value = 180;
         }
-      }
-      else {
-        value++;
       }
 
       buttonA.waitForRelease();
@@ -479,6 +479,7 @@ int chsValue( int challenge ){
       buzz();
     }
     else if (buttonB.isPressed()){
+      value--;
       
       if ( value < 1 && challenge == 0 ){
         value = 7;
@@ -487,14 +488,12 @@ int chsValue( int challenge ){
         value = 0;
       }
       else if ( challenge == 6 ){
+        value++;
         value -= 5;
 
         if ( value < -180 ){
           value = -180;
         }
-      }
-      else {
-        value--;
       }
 
       buttonB.waitForRelease();
