@@ -1,155 +1,194 @@
 #include <Wire.h>
 #include <Zumo32U4.h>
-#include <PololuSH1106Main.h>
-#include <Zumo32U4Encoders.h>
 
+Zumo32U4OLED OLED;
 Zumo32U4LineSensors lineSensors;
-Zumo32U4Encoders encoders;
+Zumo32U4ButtonA buttonA;
+Zumo32U4ButtonB buttonB;
+Zumo32U4ButtonC buttonC;
+Zumo32U4Buzzer buzzer;
 Zumo32U4Motors motors;
-Zumo32U4IMU imu;
+Zumo32U4Encoders encoders;
 
 #define NUM_SENSORS 3
 uint16_t lineSensorValues[NUM_SENSORS];
 
-int threshold = 600;
-int speed = 100;
-int movementParameter = 11;
-int maxDistance = 41;
-float wheelCirc = 13;
-int caseStep = 0;
-bool leftReachedTape = false, leftOverTape = false, leftDone = false;
-bool rightReachedTape = false, rightOverTape = false, rightDone = false;
+const int speed = 100;
+const int threshold = 600;
+const float wheelCirc = 11.9;
 
 void setup() {
-  // put your setup code here, to run once:
+  Serial.begin(9600);
   lineSensors.initThreeSensors();
 }
 
 void loop(){
-
-  readLineSensors();
-
-  if (lineSensorValues[0] < threshold && lineSensorValues[2] < threshold){  //  Goes forward when the zumo have not reached the tape.
-    caseStep = 0;
-  } else if (lineSensorValues[0] >= threshold && !leftReachedTape){         //  Aligns from the left side.
-    caseStep = 1;
-    leftReachedTape = true;
-  } else if (lineSensorValues[2] >= threshold && !rightReachedTape){        //  Aligns from the right side
-    caseStep = 1;
-    rightReachedTape = true;
-  } else {                                                                  //  Goes forward when the Zumo is aligned.
-    caseStep = 2;
-  }
-
-  switch (caseStep){    //    Either the zumo goes forward or
-    case 0: forward(speed);
-            break;
-    case 1: stop();
-            checkOver();
-            break;
-    case 2: stopAtlength();
-            break;
-    default:
-            break;
-  }
-
-  delay(100);
+  mainFunc();
 }
 
-void stopAtlength() {
-  delay(1000);
-  bool lastRun = true;
-  float num = maxDistance - movementParameter;
+void mainFunc(){
+  int maxLength = 41;
+  int length;
+  bool runLastPart = true;
+
+  //  Gets a value returned from the function.
+  length = chsValue();
+
+  countdown();
+  alignZumo();
+
+  delay(200);
 
   resetEncoders();
+  forward(speed);
 
-  motors.setSpeeds(speed, speed);
-
-  while (lastRun){
-    if (getDistance() >= num){
+  while (runLastPart){
+    if (getDistance() >= maxLength - length){
       stop();
+      runLastPart = false;
     }
   }
-
 }
 
-void forward(int spd){
-  motors.setSpeeds(spd, spd);
-}
-void stop(){
-  motors.setSpeeds(0, 0);
-}
 
-void checkOver(){
-  delay(500);
-  forward(speed/2);
-
+void alignZumo(){
   bool run = true;
+  bool lOver = false, rOver = false;
 
-  while(run){
+  forward( speed );
+  
+  while ( run ){
     readLineSensors();
-    if(leftReachedTape && lineSensorValues[2] >= threshold){
+
+    if ( lineSensorValues[0] >= threshold && lineSensorValues[2] >= threshold ){
       stop();
-      rightReachedTape = true;
-      run = false;
-    } else if (rightReachedTape && lineSensorValues[0] >= threshold){
-      stop();
-      leftReachedTape = true;
       run = false;
     }
-  }
+    else if ( lineSensorValues[0] >= threshold ){
+      motors.setLeftSpeed(0);
+    }
+    else if ( lineSensorValues[2] >= threshold ){
+      motors.setRightSpeed(0);
+    }
 
-  delay(1000);
+  }
 
   run = true;
 
-  forward(speed);
+  forward( speed );
 
-  while (run){
+  while ( run ){
     readLineSensors();
 
-    if (!leftDone || !rightDone){   //  Runs if and only if one of the sides is not aligned.
-      //  Checks left side
-      if (leftReachedTape && lineSensorValues[0] < threshold){      //  Goes back if over tape.
-        motors.setLeftSpeed(-speed);
-        leftOverTape = true;
-        leftDone = false;
-      } else if(leftOverTape && lineSensorValues[0] >= threshold){  //  Only stops if it have been over the tape once.
- 
-        motors.setLeftSpeed(0);
-        leftDone = true;
-      }
+    if ( lineSensorValues[0] < threshold ){
+      motors.setLeftSpeed(0);
+      lOver = true;
+    }
 
-      //  Checks right side
-      if (rightReachedTape && lineSensorValues[2] < threshold){     //  Goes back if over tape.
-        motors.setRightSpeed(-speed);
-        rightOverTape = true;
-        rightDone = false;
-      } else if (rightOverTape && lineSensorValues[2] >= threshold){  //  Only stops if it have been over the tape once.
-       
-        motors.setRightSpeed(0);
-        rightDone = true;
-      }
-    } else {    //  Stops aligning the Zumo when both sides have stopped.
-        run = false;
+    if ( lineSensorValues[2] < threshold ){
+      motors.setRightSpeed(0);
+      rOver = true;
+    }
+
+    if (lOver && rOver){
+      run = false;
     }
   }
+  
 }
 
-void readLineSensors(){
-  lineSensors.read(lineSensorValues, QTR_EMITTERS_ON);    //    Reads the three linesensors and insert their value into the array lineSensorValues[].
+int chsValue(){
+  int value = 0;
+  bool chsValue = true;
+
+  printValue( value );
+
+  while (chsValue){
+    if (buttonA.isPressed()){
+      value++;
+
+      if ( value > 50){
+        value = 50;
+      }
+
+      buttonA.waitForRelease();
+      printValue( value );
+
+      buzz();
+    }
+    else if (buttonB.isPressed()){
+      value--;
+      
+      if ( value < 1){
+        value = 0;
+      }
+
+      buttonB.waitForRelease();
+      printValue( value );
+
+      buzz();
+    }
+    else if (buttonC.isPressed()){
+      chsValue = false;
+
+      buttonC.waitForRelease();
+      buzz();
+    }
+  }
+
+  return value;
+}
+
+
+
+void forward( int spd ){
+  motors.setSpeeds( spd, spd );
+  ledRed(false);
+  ledGreen(true);
+}
+
+void stop(){
+  motors.setSpeeds(0, 0);
+  ledRed(true);
+  ledGreen(false);
 }
 
 float getDistance(){
   int countsL = encoders.getCountsLeft();
   int countsR = encoders.getCountsRight();
 
-  float distanceL = countsL/900.0 * wheelCirc;
-  float distanceR = countsR/900.0 * wheelCirc;
+  float distanceL = countsL/909.7 * wheelCirc;
+  float distanceR = countsR/909.7 * wheelCirc;
 
   return (distanceL + distanceR)/2;
 }
+
 void resetEncoders(){
   encoders.getCountsAndResetLeft();
   encoders.getCountsAndResetRight();
 }
+
+void countdown(){
+  for (int time = 5; time > 0; time--){
+    buzz();
+    OLED.clear();
+    OLED.print(time);
+    delay(1000);
+  }
+  buzzer.playNote(330, 200, 10);
+  OLED.clear();
+}
+
+void readLineSensors(){
+  lineSensors.read(lineSensorValues, QTR_EMITTERS_ON);
+}
+
+void printValue( int value ){
+  OLED.clear();
+  OLED.print(value);
+}
+
+void buzz(){
+  buzzer.playNote(300, 100, 10);
+}
+
