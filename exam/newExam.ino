@@ -114,7 +114,7 @@ void challengeTwo(){
 
   countdown();
 
-  while( baseSpeed ){
+  while( run ){
     readLineSensors();
 
     if ( lineSensorValues[0] >= threshold){
