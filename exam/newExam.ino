@@ -246,6 +246,10 @@ void challengeSeven(){
     if (lineSensorValues[0] > threshold || lineSensorValues[2] > threshold || lineSensorValues[4] > threshold){
       stop();
     }
+    else if (getTurnAngleInDegrees() > 0){
+      printValue(getTurnAngleInDegrees());
+      motors.setSpeeds(200 + gyroAdjust(), 200 - gyroAdjust());
+    }
     else {
       printValue(getTurnAngleInDegrees());
       motors.setSpeeds(200 + gyroAdjust(), 200 - gyroAdjust());
