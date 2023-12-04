@@ -216,9 +216,11 @@ void challengeSix(){
   delay(1000);
 
   turnSensorSetup();
+  run = false;
   turnByDegree( degreesToTurn );
   forward( speed );
-
+  delay(800);
+  run = true;
   while ( run ){
     readLineSensors();
 
