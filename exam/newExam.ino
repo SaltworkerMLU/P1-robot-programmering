@@ -19,7 +19,7 @@ uint16_t lineSensorValues[NUM_SENSORS];
 
 const int speed = 100;
 const int threshold = 600;
-const float wheelCirc = 11.94;
+const float wheelCirc = 11.9;
 
 int count = 0;
 
