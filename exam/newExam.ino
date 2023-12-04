@@ -109,9 +109,8 @@ void challengeOne(){
 }
 
 void challengeTwo(){
-  bool runChTwo = true;
   int baseSpeed = 200;
-
+  bool run = true;
   countdown();
 
   while( run ){
