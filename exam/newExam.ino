@@ -346,7 +346,7 @@ void eightFigure() {
     }
     else {
       motors.setSpeeds(100, -100);
-      delay(300);
+      delay(200);
       motors.setSpeeds(100, 100);
       delay(300);
     }
