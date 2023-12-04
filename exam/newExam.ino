@@ -193,12 +193,13 @@ void challengeFive(){
 
     if (lineSensorValues[0] > threshold || lineSensorValues[0] > threshold || lineSensorValues[2] > threshold){
       count++;
-      if ( count > lastCount ){
-        OLED.clear();
-        OLED.print("Count: " + count);
-        lastCount = count;
-      }
     }
+
+    OLED.clear();
+    OLED.print("Count:");
+    OLED.gotoXY(7, 0);
+    OLED.print(count);
+    lastCount = count;
     
     getProximity();
     eightFigure();
